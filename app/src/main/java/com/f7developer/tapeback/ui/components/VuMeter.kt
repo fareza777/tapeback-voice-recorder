@@ -167,7 +167,10 @@ fun VuMeter(
                             strokeWidth = h * 0.012f,
                         )
                         val lp = point(a, radius + h * 0.17f)
-                        drawText(layout, topLeft = Offset(lp.x - layout.size.width / 2f, lp.y - layout.size.height / 2f))
+                        // The -20 and +3 marks sit at the widest angles; keep them on the cream face.
+                        val margin = inset + h * 0.03f
+                        val x = (lp.x - layout.size.width / 2f).coerceIn(margin, w - margin - layout.size.width)
+                        drawText(layout, topLeft = Offset(x, lp.y - layout.size.height / 2f))
                     }
                     drawText(vuLayout, topLeft = Offset(w / 2f - vuLayout.size.width / 2f, h * 0.56f))
                     drawText(chLayout, topLeft = Offset(w * 0.1f, h * 0.7f))
