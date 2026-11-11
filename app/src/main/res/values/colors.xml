@@ -1,10 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="brand_night">#FF120E0B</color>
-    <color name="brand_amber">#FFFF9F1C</color>
-    <color name="brand_ember">#FFF2600C</color>
-    <color name="brand_cream">#FFF3E6C8</color>
-    <color name="brand_shell">#FF1B1512</color>
-    <color name="brand_window">#FF2A1A10</color>
-    <color name="brand_rec">#FFFF4B3E</color>
 </resources>

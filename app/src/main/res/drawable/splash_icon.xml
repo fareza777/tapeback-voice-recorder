@@ -5,15 +5,16 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0">
+    <path android:pathData="M54,54m-35.5,0a35.5,35.5 0,1 1,71 0a35.5,35.5 0,1 1,-71 0">
         <aapt:attr name="android:fillColor">
-            <gradient android:type="radial" android:centerX="44" android:centerY="40" android:gradientRadius="56">
+            <gradient android:type="radial" android:centerX="44" android:centerY="40" android:gradientRadius="50">
                 <item android:color="#FFFFC15E" android:offset="0" />
                 <item android:color="#FFFF8A1F" android:offset="0.55" />
                 <item android:color="#FFD9480F" android:offset="1" />
             </gradient>
         </aapt:attr>
     </path>
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.82" android:scaleY="0.82">
     <!-- Soft drop shadow -->
     <path
         android:fillColor="#33000000"
@@ -61,4 +62,5 @@
     <path android:fillColor="#FF8E887E" android:pathData="M28.8,70m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" />
     <path android:fillColor="#FF8E887E" android:pathData="M79.2,70m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" />
 
+    </group>
 </vector>

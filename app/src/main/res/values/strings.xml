@@ -138,19 +138,19 @@
     <string name="seal_confirm">Seal it</string>
 
     <!-- Library -->
-    <string name="library_subtitle">%1$d tapes · %2$d recordings · %3$s</string>
+    <string name="library_subtitle">%1$s · %2$s · %3$s</string>
     <string name="library_new_tape">New tape</string>
     <string name="library_empty_title">Your shelf is empty</string>
     <string name="library_empty_body">Create a cassette for each part of your life: diary, ideas, family, travel.</string>
     <string name="cassette_stats">A %1$d · B %2$d · %3$s</string>
-    <string name="cassette_summary">%1$d recordings · %2$s</string>
+    <string name="cassette_summary">%1$s · %2$s</string>
     <string name="play_side">Play side %1$s</string>
     <string name="record_on_side">Record on %1$s</string>
     <string name="side_tab">Side %1$s (%2$d)</string>
     <string name="side_blank_title">Side %1$s is blank</string>
     <string name="side_blank_body">Tap "Record on" to make this side the deck\'s recording target.</string>
     <string name="delete_cassette_title">Delete "%1$s"?</string>
-    <string name="delete_cassette_body">This cassette and its %1$d recordings will be erased from this device. This can\'t be undone.</string>
+    <string name="delete_cassette_body">This cassette and its %1$s will be erased from this device. This can\'t be undone.</string>
     <string name="editor_new_title">New cassette</string>
     <string name="editor_edit_title">Edit cassette</string>
     <string name="editor_title_placeholder">Untitled tape</string>
@@ -187,6 +187,18 @@
     <string name="stat_recorded">RECORDED</string>
     <string name="stat_streak">DAY STREAK</string>
     <string name="on_this_day">On this day</string>
+    <plurals name="tapes_count">
+        <item quantity="one">%1$d tape</item>
+        <item quantity="other">%1$d tapes</item>
+    </plurals>
+    <plurals name="recordings_count">
+        <item quantity="one">%1$d recording</item>
+        <item quantity="other">%1$d recordings</item>
+    </plurals>
+    <plurals name="days_count">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
     <plurals name="years_ago">
         <item quantity="one">%1$d year ago</item>
         <item quantity="other">%1$d years ago</item>
@@ -225,9 +237,9 @@
     <string name="quality_high">High (recommended)</string>
     <string name="quality_studio">Studio</string>
     <string name="quality_detail">%1$.1f kHz · %2$d kbps AAC · about %3$d MB per hour</string>
-    <string name="storage_used">%1$d recordings · %2$s</string>
+    <string name="storage_used">%1$s · %2$s</string>
     <string name="storage_free">%1$s free on this device</string>
-    <string name="privacy_title">100% offline by design</string>
+    <string name="privacy_title" formatted="false">100% offline by design</string>
     <string name="privacy_body">TapeBack has no internet permission, no account, no analytics and no ads. Recordings, covers and settings stay in the app\'s private storage and are excluded from cloud backup. Only you decide what to share.</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_publisher">Made by F7 Developer for Kiroween: Resurrection.</string>
@@ -244,7 +256,7 @@
     <string name="onb2_body">Organize recordings on custom cassettes with Side A and B, labels, shells and cover art.</string>
     <string name="onb3_title">Letters to the future</string>
     <string name="onb3_body">Seal a message until a date you choose. It unlocks with a notification, even years from now.</string>
-    <string name="onb4_title">Yours alone. 100% offline.</string>
+    <string name="onb4_title" formatted="false">Yours alone. 100% offline.</string>
     <string name="onb4_body">No account, no cloud, no internet permission. TapeBack asks for two things:</string>
     <string name="onb_perm_mic">Microphone, to record your voice</string>
     <string name="onb_perm_notif">Notifications, for recording controls and capsule unlocks</string>
@@ -291,10 +303,10 @@
     <string name="cd_capsule_badge">Time capsule</string>
     <string name="cd_save_title">Save title</string>
     <string name="cd_remove_tag">Remove tag %1$s</string>
-    <string name="cd_countdown">Opens in %1$d days, %2$d hours and %3$d minutes</string>
+    <string name="cd_countdown">Opens in %1$s, %2$d h %3$d min</string>
     <string name="cd_sealed_capsule">Sealed capsule: %1$s</string>
     <string name="cd_cover_art">Cover artwork</string>
-    <string name="cd_cassette_card">%1$s, %2$d recordings</string>
+    <string name="cd_cassette_card">%1$s, %2$s</string>
     <string name="cd_edit_cassette">Edit cassette</string>
     <string name="cd_delete_cassette">Delete cassette</string>
     <string name="cd_recording_options">Options for %1$s</string>

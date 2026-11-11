@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -41,9 +44,15 @@ fun WaveformScrubber(
     modifier: Modifier = Modifier,
     height: Dp = 56.dp,
     enabled: Boolean = true,
+    animate: Boolean = false,
     contentDescription: String,
 ) {
     val seek by rememberUpdatedState(onSeek)
+    // Redraw every frame while the tape moves; progress() itself is not snapshot state.
+    var frame by remember { mutableLongStateOf(0L) }
+    if (animate) {
+        LaunchedEffect(Unit) { while (true) withFrameNanos { frame = it } }
+    }
     var dragFraction by remember { mutableStateOf<Float?>(null) }
     val bars = remember(waveform) { if (waveform.isEmpty()) List(64) { 0.08f } else waveform }
     Spacer(
@@ -80,6 +89,7 @@ fun WaveformScrubber(
                     },
             )
             .drawBehind {
+                @Suppress("UNUSED_EXPRESSION") frame
                 val p = (dragFraction ?: progress()).coerceIn(0f, 1f)
                 val n = bars.size
                 val gap = 2.dp.toPx()

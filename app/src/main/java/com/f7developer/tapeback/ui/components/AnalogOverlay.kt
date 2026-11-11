@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.createBitmap
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
@@ -64,7 +65,7 @@ fun AnalogOverlay(grain: Boolean, scanlines: Boolean, reduceMotion: Boolean, dar
 }
 
 private fun noiseTile(sizePx: Int): ImageBitmap {
-    val bitmap = android.graphics.Bitmap.createBitmap(sizePx, sizePx, android.graphics.Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(sizePx, sizePx)
     val rnd = Random(42)
     val pixels = IntArray(sizePx * sizePx) {
         val v = rnd.nextInt(0, 256)

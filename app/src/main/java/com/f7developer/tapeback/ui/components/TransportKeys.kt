@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.f7developer.tapeback.ui.theme.Retro
 import com.f7developer.tapeback.ui.theme.SilkscreenStyle
@@ -152,10 +153,11 @@ private fun PianoKey(key: TransportKey, recColor: Color, modifier: Modifier) {
                 modifier = Modifier
                     .size(26.dp)
                     .align(Alignment.Center)
-                    .offset(y = (-4).dp + (lip * travel * 0.8f)),
+                    .offset { IntOffset(0, ((-4).dp + lip * travel * 0.8f).roundToPx()) },
             ) {
-                val ink = if (key.enabled) palette.keyText else palette.keyText.copy(alpha = 0.35f)
-                drawSymbol(key.symbol, if (key.symbol == KeySymbol.REC) recColor.copy(alpha = if (key.enabled) 1f else 0.4f) else ink)
+                val lit = key.enabled || key.latched
+                val ink = if (lit) palette.keyText else palette.keyText.copy(alpha = 0.35f)
+                drawSymbol(key.symbol, if (key.symbol == KeySymbol.REC) recColor.copy(alpha = if (lit) 1f else 0.4f) else ink)
             }
             if (key.latched && (key.symbol == KeySymbol.REC || key.symbol == KeySymbol.PLAY)) {
                 // Tally light on engaged REC / PLAY keys
@@ -173,7 +175,7 @@ private fun PianoKey(key: TransportKey, recColor: Color, modifier: Modifier) {
         Text(
             text = key.label,
             style = SilkscreenStyle,
-            color = palette.panelText.copy(alpha = if (key.enabled) 0.9f else 0.4f),
+            color = palette.panelText.copy(alpha = if (key.enabled || key.latched) 0.9f else 0.4f),
             textAlign = TextAlign.Center,
             maxLines = 1,
             modifier = Modifier.fillMaxWidth(),

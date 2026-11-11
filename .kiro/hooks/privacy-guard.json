@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Offline privacy guard",
+      "trigger": "PostFileSave",
+      "description": "Fails if the manifest stops removing INTERNET, the merged manifest requests it, or code/build files add networking or analytics APIs.",
+      "matcher": "(AndroidManifest\\.xml|\\.gradle\\.kts|libs\\.versions\\.toml|\\.kt)$",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/kiro/privacy-guard.ps1",
+        "timeout": 60
+      }
+    }
+  ]
+}

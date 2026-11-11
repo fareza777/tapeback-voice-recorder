@@ -2,6 +2,7 @@ package com.f7developer.tapeback.ui
 
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.LocalActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.rounded.HourglassTop
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -26,6 +28,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -33,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -84,17 +86,20 @@ fun TapeBackRoot(rootVm: RootViewModel, pendingRoute: MutableStateFlow<String?>)
     val s = settings ?: return // the splash screen stays visible until settings are read
     TapeBackTheme(s) {
         val palette = Retro.palette
-        val activity = LocalContext.current as? ComponentActivity
+        val activity = LocalActivity.current as? ComponentActivity
         LaunchedEffect(palette.isDark) {
             val style = if (palette.isDark) SystemBarStyle.dark(Color.Transparent.toArgb())
             else SystemBarStyle.light(Color.Transparent.toArgb(), Color.Transparent.toArgb())
             activity?.enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
         }
         Box(Modifier.fillMaxSize().retroBackground(palette.background, palette.backgroundGlow)) {
-            if (!s.onboardingDone) {
-                OnboardingScreen(onDone = rootVm::completeOnboarding)
-            } else {
-                MainShell(pendingRoute)
+            // The shell is transparent over the retro background, so set the content color explicitly.
+            CompositionLocalProvider(LocalContentColor provides palette.text) {
+                if (!s.onboardingDone) {
+                    OnboardingScreen(onDone = rootVm::completeOnboarding)
+                } else {
+                    MainShell(pendingRoute)
+                }
             }
             AnalogOverlay(grain = s.grain, scanlines = s.scanlines, reduceMotion = Retro.reduceMotion, dark = palette.isDark)
         }
@@ -136,6 +141,7 @@ private fun MainShell(pendingRoute: MutableStateFlow<String?>) {
             }
             Scaffold(
                 containerColor = Color.Transparent,
+                contentColor = palette.text,
                 snackbarHost = { SnackbarHost(snackbar) },
                 bottomBar = {
                     if (!wide && showNav) {

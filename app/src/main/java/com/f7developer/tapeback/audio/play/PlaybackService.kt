@@ -3,6 +3,8 @@ package com.f7developer.tapeback.audio.play
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -21,6 +23,7 @@ import com.f7developer.tapeback.audio.fx.TapeAudioProcessor
  * Owns the only ExoPlayer instance. The custom audio sink inserts [TapeAudioProcessor] so the
  * cassette effects and meters run on exactly what the user hears.
  */
+@OptIn(UnstableApi::class)
 class PlaybackService : MediaSessionService() {
 
     private var session: MediaSession? = null

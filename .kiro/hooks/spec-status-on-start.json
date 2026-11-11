@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Spec progress at session start",
+      "trigger": "SessionStart",
+      "description": "Injects spec task progress, the next open tasks and git state into the agent context when a session starts.",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/kiro/spec-status.ps1",
+        "timeout": 30
+      }
+    }
+  ]
+}

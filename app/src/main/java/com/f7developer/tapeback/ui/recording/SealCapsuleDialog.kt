@@ -17,6 +17,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -39,7 +40,7 @@ fun SealCapsuleDialog(onDismiss: () -> Unit, onSeal: (unlockAt: Long, note: Stri
     val zone = remember { ZoneId.systemDefault() }
     val now = remember { System.currentTimeMillis() }
     val earliest = remember { CapsulePolicy.earliestDate(now, zone) }
-    var dateEpochDay by rememberSaveable { mutableStateOf(CapsulePolicy.quickPickDate(CapsulePolicy.QuickPick.ONE_YEAR, now, zone).toEpochDay()) }
+    var dateEpochDay by rememberSaveable { mutableLongStateOf(CapsulePolicy.quickPickDate(CapsulePolicy.QuickPick.ONE_YEAR, now, zone).toEpochDay()) }
     var pick by rememberSaveable { mutableStateOf<String?>(CapsulePolicy.QuickPick.ONE_YEAR.name) }
     var note by rememberSaveable { mutableStateOf("") }
     var showPicker by remember { mutableStateOf(false) }

@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Kotlin standards guard",
+      "trigger": "PostFileSave",
+      "description": "After a Kotlin file is saved, flags !!, println, printStackTrace, Log.d, TODO/FIXME and GlobalScope per .kiro/steering/coding-standards.md.",
+      "matcher": "\\.kt$",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/kiro/kotlin-guard.ps1",
+        "timeout": 60
+      }
+    }
+  ]
+}

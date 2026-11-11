@@ -1,5 +1,6 @@
 package com.f7developer.tapeback.audio.record
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -83,7 +84,9 @@ class RecordingService : Service() {
         controller.beginCapture()
     }
 
+    @SuppressLint("MissingPermission") // guarded by Notifications.canPost
     private fun notify(notification: Notification) {
+        if (!Notifications.canPost(this)) return
         runCatching { NotificationManagerCompat.from(this).notify(Notifications.RECORDING_ID, notification) }
     }
 

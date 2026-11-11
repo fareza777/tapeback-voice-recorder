@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Confirm destructive commands",
+      "trigger": "PreToolUse",
+      "description": "Asks the user to confirm force pushes, hard resets, git clean, branch deletion or recursive deletes of source/.kiro before they run.",
+      "matcher": "(execute_pwsh|shell|bash|execute_bash)",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/kiro/git-safety.ps1",
+        "timeout": 20
+      }
+    }
+  ]
+}

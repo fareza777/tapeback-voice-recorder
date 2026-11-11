@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -104,7 +105,7 @@ fun CapsuleCountdownText(unlockAt: Long, modifier: Modifier = Modifier) {
     val now = rememberNow()
     val c = CapsulePolicy.countdown(unlockAt, now)
     val text = String.format(java.util.Locale.ENGLISH, "%dd %02dh %02dm %02ds", c.days, c.hours, c.minutes, c.seconds)
-    val description = stringResource(R.string.cd_countdown, c.days, c.hours, c.minutes)
+    val description = stringResource(R.string.cd_countdown, pluralStringResource(R.plurals.days_count, c.days.toInt(), c.days.toInt()), c.hours, c.minutes)
     Text(
         text = text,
         style = TextStyle(fontFamily = LcdFamily, fontSize = 26.sp, color = Retro.palette.lcdText),

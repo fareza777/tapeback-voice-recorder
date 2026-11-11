@@ -132,7 +132,7 @@ fun CassetteArt(
                 val sealLayout = sealedText?.let {
                     measurer.measure(
                         text = it.uppercase(),
-                        style = TextStyle(fontFamily = BungeeFamily, fontSize = px(34f), color = Color(0xFFFFF4E0)),
+                        style = TextStyle(fontFamily = BungeeFamily, fontSize = px(46f), color = Color(0xFFFFF4E0)),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         constraints = Constraints(maxWidth = (820f * s).toInt().coerceAtLeast(1)),

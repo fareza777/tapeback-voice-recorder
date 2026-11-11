@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Full gate after each spec task",
+      "trigger": "PostTaskExec",
+      "description": "After a spec task from .kiro/specs/tapeback-voice-diary/tasks.md is executed, runs guards, unit tests, Android lint and a debug assemble.",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/kiro/quality-gate.ps1 -Full",
+        "timeout": 1500
+      }
+    }
+  ]
+}

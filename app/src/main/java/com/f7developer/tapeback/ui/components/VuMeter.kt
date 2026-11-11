@@ -6,7 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -40,7 +41,7 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-private const val SWEEP = 84f // degrees of needle travel
+private const val SWEEP = 76f // degrees of needle travel
 private val SCALE_MARKS = listOf(-20f, -10f, -7f, -5f, -3f, -1f, 0f, 1f, 2f, 3f)
 
 /**
@@ -59,8 +60,8 @@ fun VuMeter(
     val reduceMotion = Retro.reduceMotion
     val measurer = rememberTextMeasurer(cacheSize = 16)
     var needle by remember { mutableFloatStateOf(0f) }
-    var peakUntil by remember { mutableStateOf(0L) }
-    var coarseVu by remember { mutableStateOf(VuBallistics.MIN_VU.roundToInt()) }
+    var peakUntil by remember { mutableLongStateOf(0L) }
+    var coarseVu by remember { mutableIntStateOf(VuBallistics.MIN_VU.roundToInt()) }
     val currentLevel by rememberUpdatedState(level)
     val isActive by rememberUpdatedState(active)
 

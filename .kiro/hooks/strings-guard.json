@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "String resources guard",
+      "trigger": "PostFileSave",
+      "description": "Validates strings.xml, escaped apostrophes, and that every R.string / R.plurals reference resolves (English-only copy lives in strings.xml).",
+      "matcher": "(strings\\.xml|\\.kt)$",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/kiro/strings-guard.ps1",
+        "timeout": 60
+      }
+    }
+  ]
+}

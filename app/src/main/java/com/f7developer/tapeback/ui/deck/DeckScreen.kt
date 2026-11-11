@@ -597,6 +597,7 @@ private fun TrackStrip(
                 playedColor = palette.accent,
                 idleColor = palette.outline,
                 enabled = state.loaded != null && duration > 0,
+                animate = state.mode == DeckMode.PLAYING || state.isWinding,
                 contentDescription = stringResource(R.string.cd_scrubber),
             )
         }

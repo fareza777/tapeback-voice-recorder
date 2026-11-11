@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -80,8 +81,8 @@ fun LibraryScreen(onOpenCassette: (Long) -> Unit, contentPadding: PaddingValues)
                     title = stringResource(R.string.tab_library),
                     subtitle = stringResource(
                         R.string.library_subtitle,
-                        list.size,
-                        list.sumOf { it.totalCount },
+                        pluralStringResource(R.plurals.tapes_count, list.size, list.size),
+                        list.sumOf { it.totalCount }.let { n -> pluralStringResource(R.plurals.recordings_count, n, n) },
                         TimeFormat.humanTotal(list.sumOf { it.totalDurationMs }),
                     ),
                 )
@@ -122,7 +123,7 @@ fun CassetteCard(summary: CassetteSummary, onClick: () -> Unit) {
     val c = summary.cassette
     val palette = Retro.palette
     val cover = rememberCoverBitmap(c.coverPath, 384)
-    val description = stringResource(R.string.cd_cassette_card, c.title, summary.totalCount)
+    val description = stringResource(R.string.cd_cassette_card, c.title, pluralStringResource(R.plurals.recordings_count, summary.totalCount, summary.totalCount))
     Column(
         modifier = Modifier
             .fillMaxWidth()

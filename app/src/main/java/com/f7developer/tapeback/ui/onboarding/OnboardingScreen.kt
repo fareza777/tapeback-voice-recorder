@@ -147,7 +147,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
 
 @Composable
 private fun PermissionLine(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
-    Row(Modifier.widthIn(max = 420.dp).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = Retro.palette.accent)
         Spacer(Modifier.width(10.dp))
         Text(text, style = MaterialTheme.typography.bodyMedium)

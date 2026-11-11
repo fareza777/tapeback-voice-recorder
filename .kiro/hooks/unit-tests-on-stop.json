@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Unit tests when the agent stops",
+      "trigger": "Stop",
+      "description": "Runs the fast quality gate (static guards + JVM unit tests) every time the agent finishes a turn.",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/kiro/quality-gate.ps1 -Fast",
+        "timeout": 900
+      }
+    }
+  ]
+}

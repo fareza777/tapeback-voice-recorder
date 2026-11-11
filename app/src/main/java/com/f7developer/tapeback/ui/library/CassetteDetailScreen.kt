@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -198,7 +199,7 @@ fun CassetteDetailScreen(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(stringResource(R.string.delete_cassette_title, cassette.title)) },
-            text = { Text(stringResource(R.string.delete_cassette_body, count)) },
+            text = { Text(stringResource(R.string.delete_cassette_body, pluralStringResource(R.plurals.recordings_count, count, count))) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
@@ -255,7 +256,7 @@ private fun JCardHeader(cassette: Cassette, count: Int, totalMs: Long) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    stringResource(R.string.cassette_summary, count, TimeFormat.humanTotal(totalMs)),
+                    stringResource(R.string.cassette_summary, pluralStringResource(R.plurals.recordings_count, count, count), TimeFormat.humanTotal(totalMs)),
                     style = MaterialTheme.typography.labelLarge.copy(fontFamily = BungeeFamily),
                     color = if (cover != null) Color.White else ink,
                 )
