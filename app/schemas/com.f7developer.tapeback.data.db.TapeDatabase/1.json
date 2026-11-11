@@ -1,0 +1,255 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "f319731e6566d872c1451459955e6838",
+    "entities": [
+      {
+        "tableName": "cassettes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `category` TEXT NOT NULL, `labelColor` INTEGER NOT NULL, `skin` TEXT NOT NULL, `coverPath` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "labelColor",
+            "columnName": "labelColor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "skin",
+            "columnName": "skin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "coverPath",
+            "columnName": "coverPath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "recordings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `cassetteId` INTEGER NOT NULL, `side` TEXT NOT NULL, `title` TEXT NOT NULL, `filePath` TEXT NOT NULL, `durationMs` INTEGER NOT NULL, `sizeBytes` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `favorite` INTEGER NOT NULL, `waveform` BLOB, `capsuleUnlockAt` INTEGER, `capsuleSealedAt` INTEGER, `capsuleNote` TEXT, `capsuleNotified` INTEGER NOT NULL, FOREIGN KEY(`cassetteId`) REFERENCES `cassettes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cassetteId",
+            "columnName": "cassetteId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "filePath",
+            "columnName": "filePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "durationMs",
+            "columnName": "durationMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sizeBytes",
+            "columnName": "sizeBytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "favorite",
+            "columnName": "favorite",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "waveform",
+            "columnName": "waveform",
+            "affinity": "BLOB"
+          },
+          {
+            "fieldPath": "capsuleUnlockAt",
+            "columnName": "capsuleUnlockAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "capsuleSealedAt",
+            "columnName": "capsuleSealedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "capsuleNote",
+            "columnName": "capsuleNote",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "capsuleNotified",
+            "columnName": "capsuleNotified",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recordings_cassetteId",
+            "unique": false,
+            "columnNames": [
+              "cassetteId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recordings_cassetteId` ON `${TABLE_NAME}` (`cassetteId`)"
+          },
+          {
+            "name": "index_recordings_createdAt",
+            "unique": false,
+            "columnNames": [
+              "createdAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recordings_createdAt` ON `${TABLE_NAME}` (`createdAt`)"
+          },
+          {
+            "name": "index_recordings_capsuleUnlockAt",
+            "unique": false,
+            "columnNames": [
+              "capsuleUnlockAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recordings_capsuleUnlockAt` ON `${TABLE_NAME}` (`capsuleUnlockAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "cassettes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "cassetteId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "recording_tags",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`recordingId` INTEGER NOT NULL, `tag` TEXT NOT NULL, PRIMARY KEY(`recordingId`, `tag`), FOREIGN KEY(`recordingId`) REFERENCES `recordings`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "recordingId",
+            "columnName": "recordingId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tag",
+            "columnName": "tag",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "recordingId",
+            "tag"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recording_tags_tag",
+            "unique": false,
+            "columnNames": [
+              "tag"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recording_tags_tag` ON `${TABLE_NAME}` (`tag`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "recordings",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "recordingId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f319731e6566d872c1451459955e6838')"
+    ]
+  }
+}

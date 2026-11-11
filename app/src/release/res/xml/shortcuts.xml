@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_record"
+        android:shortcutId="record"
+        android:shortcutLongLabel="@string/shortcut_record_long"
+        android:shortcutShortLabel="@string/shortcut_record_short">
+        <intent
+            android:action="com.f7developer.tapeback.action.RECORD"
+            android:targetClass="com.f7developer.tapeback.MainActivity"
+            android:targetPackage="com.f7developer.tapeback" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_diary"
+        android:shortcutId="diary"
+        android:shortcutLongLabel="@string/shortcut_diary_long"
+        android:shortcutShortLabel="@string/shortcut_diary_short">
+        <intent
+            android:action="com.f7developer.tapeback.action.DIARY"
+            android:targetClass="com.f7developer.tapeback.MainActivity"
+            android:targetPackage="com.f7developer.tapeback" />
+    </shortcut>
+</shortcuts>

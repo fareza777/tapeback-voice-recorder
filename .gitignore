@@ -1,0 +1,20 @@
+*.iml
+.idea/
+.gradle/
+.kotlin/
+build/
+local.properties
+captures/
+.DS_Store
+
+# Signing material - back these up, never commit them
+keystore.properties
+keystore/
+*.jks
+*.keystore
+
+# Local QA artefacts
+qa/
+hs_err_pid*
+replay_pid*
+*.log
