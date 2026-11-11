@@ -16,6 +16,7 @@ import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -96,6 +97,7 @@ fun VuMeter(
     Spacer(
         modifier = modifier
             .aspectRatio(1.45f)
+            .graphicsLayer()
             .semantics {
                 this.contentDescription = contentDescription
                 stateDescription = if (!active) "Idle" else "$coarseVu VU"

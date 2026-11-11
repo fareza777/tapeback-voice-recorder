@@ -101,7 +101,16 @@ fun TapeBackRoot(rootVm: RootViewModel, pendingRoute: MutableStateFlow<String?>)
                     MainShell(pendingRoute)
                 }
             }
-            AnalogOverlay(grain = s.grain, scanlines = s.scanlines, reduceMotion = Retro.reduceMotion, dark = palette.isDark)
+            val container = appContainer()
+            val playing by container.playerConnection.snapshot.collectAsStateWithLifecycle()
+            val recorder by container.recordingController.state.collectAsStateWithLifecycle()
+            AnalogOverlay(
+                grain = s.grain,
+                scanlines = s.scanlines,
+                reduceMotion = Retro.reduceMotion,
+                dark = palette.isDark,
+                animate = playing.isPlaying || recorder.isCapturing,
+            )
         }
     }
 }

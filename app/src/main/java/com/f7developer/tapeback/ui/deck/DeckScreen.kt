@@ -101,7 +101,6 @@ import com.f7developer.tapeback.ui.theme.BungeeFamily
 import com.f7developer.tapeback.ui.theme.Retro
 import com.f7developer.tapeback.ui.theme.SilkscreenStyle
 import kotlinx.coroutines.delay
-import java.util.Locale
 
 @Composable
 fun DeckScreen(
@@ -324,7 +323,7 @@ fun DeckScreen(
                             label = {
                                 Text(
                                     stringResource(presetName(state.fx.preset)) + " · " +
-                                        String.format(Locale.ENGLISH, "%.2g×", state.fx.speed),
+                                        speedLabel(state.fx.speed),
                                     maxLines = 1,
                                 )
                             },

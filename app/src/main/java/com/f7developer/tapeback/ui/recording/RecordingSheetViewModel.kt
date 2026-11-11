@@ -35,7 +35,7 @@ class RecordingSheetViewModel(private val container: AppContainer, val recording
             loading = false,
             item = item,
             cassettes = cassettes,
-            tagSuggestions = DiaryLogic.allTags(all).filter { tag -> item?.recording?.tags?.contains(tag) != true }.take(12),
+            tagSuggestions = DiaryLogic.allTags(all).filter { tag -> item?.recording?.tags?.contains(tag) != true }.take(8),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecordingSheetState())
 

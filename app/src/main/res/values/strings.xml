@@ -48,7 +48,7 @@
     <string name="target_body">New recordings go onto this cassette side. Playback uses it too.</string>
     <string name="target_manage">Manage cassettes in the Library</string>
     <string name="fx_title">Sound &amp; speed</string>
-    <string name="fx_body">Real-time effects colour what you hear. Your original recording is never changed.</string>
+    <string name="fx_body">Real-time effects color what you hear. Your original recording is never changed.</string>
     <string name="fx_clean">Clean</string>
     <string name="fx_clean_desc">The recording exactly as captured.</string>
     <string name="fx_vintage">Vintage Cassette</string>

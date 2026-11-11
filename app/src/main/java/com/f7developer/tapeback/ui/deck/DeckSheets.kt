@@ -55,7 +55,6 @@ import com.f7developer.tapeback.domain.model.TapeSide
 import com.f7developer.tapeback.domain.policy.TimeFormat
 import com.f7developer.tapeback.ui.components.CassetteArt
 import com.f7developer.tapeback.ui.theme.Retro
-import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
@@ -186,13 +185,12 @@ fun EffectsSheet(fx: PlaybackFx, onChange: (PlaybackFx) -> Unit, onDismiss: () -
                 valueRange = 0f..1f,
             )
 
-            Text(stringResource(R.string.fx_speed, String.format(Locale.ENGLISH, "%.2f×", speed)), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.fx_speed, speedLabel(speed)), style = MaterialTheme.typography.titleSmall)
             Slider(
                 value = speed,
                 onValueChange = { speed = (it * 20).roundToInt() / 20f },
                 onValueChangeFinished = { onChange(fx.copy(speed = speed)) },
                 valueRange = 0.5f..2f,
-                steps = 29,
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(0.75f, 1f, 1.25f, 1.5f, 2f).forEach { s ->
@@ -202,7 +200,7 @@ fun EffectsSheet(fx: PlaybackFx, onChange: (PlaybackFx) -> Unit, onDismiss: () -
                             speed = s
                             onChange(fx.copy(speed = s))
                         },
-                        label = { Text(String.format(Locale.ENGLISH, "%.2g×", s)) },
+                        label = { Text(speedLabel(s)) },
                     )
                 }
             }
@@ -220,6 +218,10 @@ fun EffectsSheet(fx: PlaybackFx, onChange: (PlaybackFx) -> Unit, onDismiss: () -
         }
     }
 }
+
+/** 1×, 0.75×, 1.25× - no rounding surprises. */
+fun speedLabel(speed: Float): String =
+    java.math.BigDecimal(((speed * 100).roundToInt() / 100.0).toString()).stripTrailingZeros().toPlainString() + "×"
 
 fun presetName(p: EffectPreset): Int = when (p) {
     EffectPreset.CLEAN -> R.string.fx_clean

@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.ImageShader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
@@ -27,12 +28,13 @@ import kotlin.random.Random
  * and frozen when motion is reduced.
  */
 @Composable
-fun AnalogOverlay(grain: Boolean, scanlines: Boolean, reduceMotion: Boolean, dark: Boolean, modifier: Modifier = Modifier) {
+fun AnalogOverlay(grain: Boolean, scanlines: Boolean, reduceMotion: Boolean, dark: Boolean, modifier: Modifier = Modifier, animate: Boolean = false) {
     if (!grain && !scanlines) return
     val noise = remember { noiseTile(96) }
     val brush = remember(noise) { ShaderBrush(ImageShader(noise, TileMode.Repeated, TileMode.Repeated)) }
     var jitter by remember { mutableStateOf(Offset.Zero) }
-    if (grain && !reduceMotion) {
+    // The grain only shimmers while tape is moving, so an idle deck renders no frames at all.
+    if (grain && animate && !reduceMotion) {
         LaunchedEffect(Unit) {
             val rnd = Random(7)
             while (true) {
@@ -41,7 +43,7 @@ fun AnalogOverlay(grain: Boolean, scanlines: Boolean, reduceMotion: Boolean, dar
             }
         }
     }
-    Canvas(modifier = modifier.fillMaxSize().clearAndSetSemantics { }) {
+    Canvas(modifier = modifier.fillMaxSize().graphicsLayer().clearAndSetSemantics { }) {
         if (grain) {
             translate(-jitter.x, -jitter.y) {
                 drawRect(

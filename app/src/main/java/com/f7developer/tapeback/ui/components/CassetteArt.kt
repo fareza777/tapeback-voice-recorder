@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
@@ -77,6 +78,8 @@ fun CassetteArt(
     Spacer(
         modifier = modifier
             .aspectRatio(CASSETTE_ASPECT)
+            // Own layer: spinning reels re-record only the cassette, not the whole screen.
+            .graphicsLayer()
             .then(semanticsModifier)
             .drawWithCache {
                 val s = size.width / W
