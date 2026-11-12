@@ -18,6 +18,13 @@ import com.f7developer.tapeback.MainActivity
 import com.f7developer.tapeback.R
 import com.f7developer.tapeback.TapeBackApp
 import com.f7developer.tapeback.audio.fx.TapeAudioProcessor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /**
  * Owns the only ExoPlayer instance. The custom audio sink inserts [TapeAudioProcessor] so the
@@ -27,6 +34,7 @@ import com.f7developer.tapeback.audio.fx.TapeAudioProcessor
 class PlaybackService : MediaSessionService() {
 
     private var session: MediaSession? = null
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onCreate() {
         super.onCreate()
@@ -68,6 +76,12 @@ class PlaybackService : MediaSessionService() {
         session = MediaSession.Builder(this, player)
             .setSessionActivity(sessionActivity)
             .build()
+
+        // "Skip silence" is an ExoPlayer-only switch, so the service follows the setting directly.
+        val settings = (application as TapeBackApp).container.settingsRepository.settings
+        scope.launch {
+            settings.map { it.skipSilence }.distinctUntilChanged().collect { player.skipSilenceEnabled = it }
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
@@ -80,6 +94,7 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        scope.cancel()
         session?.run {
             player.release()
             release()

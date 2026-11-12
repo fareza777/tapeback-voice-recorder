@@ -40,6 +40,8 @@ data class RecorderState(
     val target: RecordTarget? = null,
     val cassetteTitle: String = "",
     val elapsedMs: Long = 0L,
+    /** Auto-stop limit for this take, 0 = none. */
+    val maxDurationMs: Long = 0L,
     /** Increments on every meter tick so the live waveform can redraw. */
     val tick: Long = 0L,
 ) {
@@ -48,7 +50,7 @@ data class RecorderState(
 }
 
 sealed interface RecorderEvent {
-    data class Saved(val recordingId: Long, val durationMs: Long) : RecorderEvent
+    data class Saved(val recordingId: Long, val durationMs: Long, val autoStopped: Boolean = false) : RecorderEvent
     data object TooShort : RecorderEvent
     data class Failed(val reason: Reason) : RecorderEvent
 
@@ -88,6 +90,8 @@ class RecordingController(
         val target: RecordTarget,
         val quality: RecordingQuality,
         val createdAt: Long,
+        val maxDurationMs: Long = 0L,
+        var autoStopped: Boolean = false,
         var startedRealtime: Long = 0L,
         var pausedSince: Long = 0L,
         var pausedTotal: Long = 0L,
@@ -103,8 +107,11 @@ class RecordingController(
     fun hasPermission(): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
-    /** Called from the UI (which must be visible). Starts the foreground service which begins capture. */
-    fun start(target: RecordTarget, quality: RecordingQuality) {
+    /**
+     * Called from the UI (which must be visible). Starts the foreground service which begins capture.
+     * [maxDurationMs] > 0 stops and saves the take automatically once that much audio is on tape.
+     */
+    fun start(target: RecordTarget, quality: RecordingQuality, maxDurationMs: Long = 0L) {
         if (_state.value.isBusy) return
         if (!hasPermission()) {
             _events.tryEmit(RecorderEvent.Failed(RecorderEvent.Reason.PERMISSION))
@@ -114,9 +121,9 @@ class RecordingController(
             _events.tryEmit(RecorderEvent.Failed(RecorderEvent.Reason.STORAGE))
             return
         }
-        session = Session(files.newRecordingFile(), target, quality, System.currentTimeMillis())
+        session = Session(files.newRecordingFile(), target, quality, System.currentTimeMillis(), maxDurationMs.coerceAtLeast(0L))
         liveLevels.fill(0f)
-        _state.value = RecorderState(status = RecorderStatus.STARTING, target = target)
+        _state.value = RecorderState(status = RecorderStatus.STARTING, target = target, maxDurationMs = maxDurationMs.coerceAtLeast(0L))
         scope.launch {
             val title = cassettes.get(target.cassetteId)?.title.orEmpty()
             _state.update { if (it.target == target) it.copy(cassetteTitle = title) else it }
@@ -236,7 +243,7 @@ class RecordingController(
             createdAt = s.createdAt,
             waveform = s.levels,
         )
-        return RecorderEvent.Saved(id, duration)
+        return RecorderEvent.Saved(id, duration, autoStopped = s.autoStopped)
     }
 
     private fun startTicker() {
@@ -255,7 +262,13 @@ class RecordingController(
                     liveLevels[head] = perceptual
                     liveHead = head
                 }
-                _state.update { it.copy(elapsedMs = s.elapsed(SystemClock.elapsedRealtime()), tick = it.tick + 1) }
+                val elapsed = s.elapsed(SystemClock.elapsedRealtime())
+                _state.update { it.copy(elapsedMs = elapsed, tick = it.tick + 1) }
+                if (status == RecorderStatus.RECORDING && s.maxDurationMs > 0 && elapsed >= s.maxDurationMs) {
+                    s.autoStopped = true
+                    stop()
+                    break
+                }
                 delay(TICK_MS)
             }
         }

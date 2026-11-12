@@ -3,7 +3,8 @@
     <style name="Theme.TapeBack.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/brand_night</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_animated</item>
-        <item name="windowSplashScreenAnimationDuration">900</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/splash_branding</item>
         <item name="postSplashScreenTheme">@style/Theme.TapeBack</item>
     </style>
 </resources>

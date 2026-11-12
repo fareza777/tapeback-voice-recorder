@@ -48,6 +48,16 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
+    override fun onStart() {
+        super.onStart()
+        rootVm.onAppStarted()
+    }
+
+    override fun onStop() {
+        rootVm.onAppStopped(isChangingConfigurations)
+        super.onStop()
+    }
+
     private fun handleIntent(intent: Intent?) {
         when (intent?.action) {
             ACTION_RECORD -> {

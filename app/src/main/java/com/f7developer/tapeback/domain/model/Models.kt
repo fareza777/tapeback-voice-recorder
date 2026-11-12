@@ -131,6 +131,36 @@ data class PlaybackFx(
     val linkPitch: Boolean = true,
 )
 
+/** What happens when a recording finishes playing. */
+enum class RepeatMode {
+    /** Play the rest of the side, then stop. */
+    OFF,
+    /** Loop the current recording. */
+    ONE,
+    /** Loop the whole side. */
+    SIDE;
+
+    companion object {
+        fun fromName(name: String?): RepeatMode = entries.firstOrNull { it.name == name } ?: OFF
+    }
+}
+
+/** A daily nudge to record a diary entry, at [minuteOfDay] local time. */
+data class DiaryReminder(
+    val enabled: Boolean = false,
+    val minuteOfDay: Int = 20 * 60,
+) {
+    val hour: Int get() = minuteOfDay / 60
+    val minute: Int get() = minuteOfDay % 60
+}
+
+object RecordingOptions {
+    /** Seconds of countdown before REC starts capturing. 0 = off. */
+    val COUNTDOWN_CHOICES = listOf(0, 3, 5, 10)
+    /** Minutes after which a recording stops and saves by itself. 0 = off. */
+    val AUTO_STOP_CHOICES = listOf(0, 15, 30, 60, 90)
+}
+
 data class AppSettings(
     val onboardingDone: Boolean = false,
     val theme: RetroThemeId = RetroThemeId.AMBER_WALKMAN,
@@ -142,6 +172,20 @@ data class AppSettings(
     val haptics: Boolean = true,
     val quality: RecordingQuality = RecordingQuality.HIGH,
     val keepScreenOn: Boolean = true,
+    /** Open the details sheet (title, tags, cassette) right after a recording is saved. */
+    val detailsAfterRecording: Boolean = true,
+    /** Seconds of 3-2-1 countdown before capture starts; 0 = off. */
+    val countdownSeconds: Int = 0,
+    /** Stop and save automatically after this many minutes; 0 = off. */
+    val autoStopMinutes: Int = 0,
+    val repeatMode: RepeatMode = RepeatMode.OFF,
+    /** Let the player jump over long pauses in speech. */
+    val skipSilence: Boolean = false,
+    val reminder: DiaryReminder = DiaryReminder(),
+    /** Ask for fingerprint, face or screen lock when TapeBack opens. */
+    val appLock: Boolean = false,
+    /** Blank the app in the recent-apps switcher and block screenshots. */
+    val hideInRecents: Boolean = false,
     val fx: PlaybackFx = PlaybackFx(),
     val recordTarget: RecordTarget? = null,
 )

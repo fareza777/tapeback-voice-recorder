@@ -17,6 +17,7 @@ import com.f7developer.tapeback.audio.fx.LevelBus
 import com.f7developer.tapeback.audio.fx.TapeEffectChain
 import com.f7developer.tapeback.domain.model.PlaybackFx
 import com.f7developer.tapeback.domain.model.RecordingItem
+import com.f7developer.tapeback.domain.model.RepeatMode
 import com.f7developer.tapeback.domain.policy.CapsulePolicy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,6 +58,16 @@ data class PlayerSnapshot(
 sealed interface PlayerEvent {
     data object TapeDamaged : PlayerEvent
     data object CapsuleLocked : PlayerEvent
+    data object SleepTimerFired : PlayerEvent
+}
+
+/** An armed sleep timer: either a wall-clock deadline or "stop when this recording ends". */
+data class SleepTimer(
+    /** [SystemClock.elapsedRealtime] deadline, or null for [endOfTrack]. */
+    val endsAtElapsed: Long?,
+    val endOfTrack: Boolean,
+) {
+    fun remainingMs(now: Long = SystemClock.elapsedRealtime()): Long = endsAtElapsed?.let { (it - now).coerceAtLeast(0L) } ?: 0L
 }
 
 /**
@@ -74,6 +85,11 @@ class PlayerConnection(
     private val connectLock = Mutex()
     private var ticker: Job? = null
     private var fx = PlaybackFx()
+    private var repeat = RepeatMode.OFF
+    private var sleepJob: Job? = null
+
+    private val _sleepTimer = MutableStateFlow<SleepTimer?>(null)
+    val sleepTimer: StateFlow<SleepTimer?> = _sleepTimer.asStateFlow()
 
     private val _snapshot = MutableStateFlow(PlayerSnapshot())
     val snapshot: StateFlow<PlayerSnapshot> = _snapshot.asStateFlow()
@@ -91,6 +107,26 @@ class PlayerConnection(
             Log.w(TAG, "Playback error", error)
             _events.tryEmit(PlayerEvent.TapeDamaged)
         }
+
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            val auto = reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT
+            if (auto && _sleepTimer.value?.endOfTrack == true) fireSleepTimer(fade = false)
+        }
+
+        // A single recording looping on "repeat" reports no item transition through the controller,
+        // but every automatic jump to the next or same item is an AUTO_TRANSITION discontinuity.
+        override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
+            if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION && _sleepTimer.value?.endOfTrack == true) {
+                fireSleepTimer(fade = false)
+            }
+        }
+
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_ENDED && _sleepTimer.value?.endOfTrack == true) {
+                _sleepTimer.value = null
+                _events.tryEmit(PlayerEvent.SleepTimerFired)
+            }
+        }
     }
 
     private suspend fun connect(): MediaController = withContext(Dispatchers.Main) {
@@ -101,6 +137,7 @@ class PlayerConnection(
             c.addListener(listener)
             controller = c
             applyFxTo(c)
+            c.repeatMode = repeat.toPlayer()
             publish(c)
             c
         }
@@ -174,6 +211,59 @@ class PlayerConnection(
         c.playbackParameters = PlaybackParameters(fx.speed, pitch)
     }
 
+    fun applyRepeat(mode: RepeatMode) {
+        repeat = mode
+        controller?.let { c -> scope.launch(Dispatchers.Main) { c.repeatMode = mode.toPlayer() } }
+    }
+
+    /** Pause playback after [minutes], fading the last few seconds out like a deck winding down. */
+    fun setSleepTimer(minutes: Int) {
+        sleepJob?.cancel()
+        val endsAt = SystemClock.elapsedRealtime() + minutes * 60_000L
+        _sleepTimer.value = SleepTimer(endsAtElapsed = endsAt, endOfTrack = false)
+        sleepJob = scope.launch(Dispatchers.Main) {
+            delay((endsAt - SystemClock.elapsedRealtime() - FADE_MS).coerceAtLeast(0L))
+            fireSleepTimer(fade = true)
+        }
+    }
+
+    /** Pause when the current recording finishes. */
+    fun setSleepAtEndOfTrack() {
+        sleepJob?.cancel()
+        sleepJob = null
+        _sleepTimer.value = SleepTimer(endsAtElapsed = null, endOfTrack = true)
+    }
+
+    fun cancelSleepTimer() {
+        sleepJob?.cancel()
+        sleepJob = null
+        _sleepTimer.value = null
+    }
+
+    private fun fireSleepTimer(fade: Boolean) {
+        val c = controller
+        _sleepTimer.value = null
+        if (c == null) return
+        scope.launch(Dispatchers.Main) {
+            if (fade && c.isPlaying) {
+                val steps = 20
+                for (i in steps downTo 1) {
+                    runCatching { c.volume = i / steps.toFloat() }
+                    delay(FADE_MS / steps)
+                }
+            }
+            c.pause()
+            runCatching { c.volume = 1f }
+            _events.tryEmit(PlayerEvent.SleepTimerFired)
+        }
+    }
+
+    private fun RepeatMode.toPlayer(): Int = when (this) {
+        RepeatMode.OFF -> Player.REPEAT_MODE_OFF
+        RepeatMode.ONE -> Player.REPEAT_MODE_ONE
+        RepeatMode.SIDE -> Player.REPEAT_MODE_ALL
+    }
+
     /** Extrapolated position for 60 fps animation between snapshots. */
     fun livePositionMs(): Long {
         val s = _snapshot.value
@@ -229,5 +319,6 @@ class PlayerConnection(
 
     private companion object {
         const val TAG = "PlayerConnection"
+        const val FADE_MS = 5_000L
     }
 }

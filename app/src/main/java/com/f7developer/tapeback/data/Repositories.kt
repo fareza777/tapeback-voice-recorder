@@ -169,6 +169,9 @@ class RecordingRepository(
 
     suspend fun pendingCapsules(): List<Recording> = dao.pendingCapsules().map { it.toDomain(emptyList()) }
 
+    /** Number of entries recorded in [startMs, endMs). */
+    suspend fun countCreatedBetween(startMs: Long, endMs: Long): Int = dao.countCreatedBetween(startMs, endMs)
+
     suspend fun delete(id: Long) {
         val row = dao.get(id) ?: return
         dao.delete(id)

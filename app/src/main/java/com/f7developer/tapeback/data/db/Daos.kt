@@ -45,6 +45,18 @@ interface CassetteDao {
 
     @Query("DELETE FROM cassettes WHERE id = :id")
     suspend fun delete(id: Long)
+
+    @Query("SELECT * FROM cassettes ORDER BY createdAt ASC")
+    suspend fun all(): List<CassetteEntity>
+
+    @Query("SELECT * FROM cassettes WHERE title = :title AND createdAt = :createdAt LIMIT 1")
+    suspend fun findByTitleAndCreated(title: String, createdAt: Long): CassetteEntity?
+
+    @Query(
+        "SELECT * FROM cassettes c WHERE c.title = :title " +
+            "AND NOT EXISTS (SELECT 1 FROM recordings r WHERE r.cassetteId = c.id) LIMIT 1",
+    )
+    suspend fun findEmptyByTitle(title: String): CassetteEntity?
 }
 
 @Dao
@@ -80,6 +92,16 @@ interface RecordingDao {
 
     @Query("SELECT COALESCE(SUM(sizeBytes), 0) FROM recordings")
     fun observeTotalBytes(): Flow<Long>
+
+    @Query("SELECT COUNT(*) FROM recordings WHERE createdAt >= :start AND createdAt < :end")
+    suspend fun countCreatedBetween(start: Long, end: Long): Int
+
+    @Transaction
+    @Query("SELECT * FROM recordings ORDER BY createdAt ASC")
+    suspend fun allWithTags(): List<RecordingWithTags>
+
+    @Query("SELECT COUNT(*) FROM recordings WHERE createdAt = :createdAt AND durationMs = :durationMs")
+    suspend fun countMatching(createdAt: Long, durationMs: Long): Int
 
     @Insert
     suspend fun insert(entity: RecordingEntity): Long

@@ -12,7 +12,9 @@ import com.f7developer.tapeback.core.sound.MechanicalSounds
 import com.f7developer.tapeback.data.CassetteRepository
 import com.f7developer.tapeback.data.RecordingRepository
 import com.f7developer.tapeback.data.SettingsRepository
+import com.f7developer.tapeback.data.backup.BackupManager
 import com.f7developer.tapeback.data.db.TapeDatabase
+import com.f7developer.tapeback.reminder.DiaryReminderScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -42,6 +44,10 @@ class AppContainer(context: Context) {
         RecordingController(app, appScope, files, recordingRepository, cassetteRepository, recordLevels)
     }
     val capsuleScheduler by lazy { CapsuleScheduler(app, recordingRepository) }
+    val reminderScheduler by lazy { DiaryReminderScheduler(app) }
+    val backupManager by lazy {
+        BackupManager(app, database, files, appScope) { id, unlockAt -> capsuleScheduler.schedule(id, unlockAt) }
+    }
     val sounds by lazy { MechanicalSounds(files.soundsDir, appScope) }
     val exporter by lazy { AudioExporter(app) }
 
@@ -59,6 +65,13 @@ class AppContainer(context: Context) {
         }
         appScope.launch {
             settingsRepository.settings.map { it.mechanicalSounds }.distinctUntilChanged().collect { sounds.enabled = it }
+        }
+        appScope.launch {
+            settingsRepository.settings.map { it.repeatMode }.distinctUntilChanged().collect { playerConnection.applyRepeat(it) }
+        }
+        appScope.launch {
+            // Re-queues the next reminder on every start too, in case the job was lost.
+            settingsRepository.settings.map { it.reminder }.distinctUntilChanged().collect { reminderScheduler.apply(it) }
         }
         sounds.prepare()
     }

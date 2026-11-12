@@ -1,5 +1,6 @@
 package com.f7developer.tapeback.ui
 
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.LocalActivity
@@ -37,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -55,7 +57,9 @@ import com.f7developer.tapeback.ui.deck.DeckScreen
 import com.f7developer.tapeback.ui.diary.DiaryScreen
 import com.f7developer.tapeback.ui.library.CassetteDetailScreen
 import com.f7developer.tapeback.ui.library.LibraryScreen
+import com.f7developer.tapeback.ui.lock.LockScreen
 import com.f7developer.tapeback.ui.onboarding.OnboardingScreen
+import com.f7developer.tapeback.ui.settings.AboutScreen
 import com.f7developer.tapeback.ui.settings.SettingsScreen
 import com.f7developer.tapeback.ui.theme.Retro
 import com.f7developer.tapeback.ui.theme.TapeBackTheme
@@ -67,6 +71,7 @@ object Routes {
     const val DIARY = "diary"
     const val CAPSULES = "capsules"
     const val SETTINGS = "settings"
+    const val ABOUT = "about"
     const val CASSETTE = "cassette/{id}"
     fun cassette(id: Long) = "cassette/$id"
 }
@@ -92,13 +97,29 @@ fun TapeBackRoot(rootVm: RootViewModel, pendingRoute: MutableStateFlow<String?>)
             else SystemBarStyle.light(Color.Transparent.toArgb(), Color.Transparent.toArgb())
             activity?.enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
         }
+        LaunchedEffect(s.hideInRecents) {
+            val window = activity?.window ?: return@LaunchedEffect
+            if (s.hideInRecents) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        val unlocked by rootVm.unlocked.collectAsStateWithLifecycle()
+        val locked = s.appLock && s.onboardingDone && !unlocked
         Box(Modifier.fillMaxSize().retroBackground(palette.background, palette.backgroundGlow)) {
             // The shell is transparent over the retro background, so set the content color explicitly.
             CompositionLocalProvider(LocalContentColor provides palette.text) {
                 if (!s.onboardingDone) {
-                    OnboardingScreen(onDone = rootVm::completeOnboarding)
+                    OnboardingScreen(
+                        settings = s,
+                        onTheme = rootVm::setTheme,
+                        onDarkMode = rootVm::setDarkMode,
+                        onDone = rootVm::completeOnboarding,
+                    )
                 } else {
-                    MainShell(pendingRoute)
+                    // Stays composed under the lock so navigation survives; hidden from accessibility.
+                    Box(if (locked) Modifier.fillMaxSize().clearAndSetSemantics { } else Modifier.fillMaxSize()) {
+                        MainShell(pendingRoute, onUnlockedByUser = rootVm::markUnlocked)
+                    }
+                    if (locked) LockScreen(onUnlocked = rootVm::markUnlocked)
                 }
             }
             val container = appContainer()
@@ -116,7 +137,7 @@ fun TapeBackRoot(rootVm: RootViewModel, pendingRoute: MutableStateFlow<String?>)
 }
 
 @Composable
-private fun MainShell(pendingRoute: MutableStateFlow<String?>) {
+private fun MainShell(pendingRoute: MutableStateFlow<String?>, onUnlockedByUser: () -> Unit) {
     val nav = rememberNavController()
     val snackbar = remember { SnackbarHostState() }
     val backStack by nav.currentBackStackEntryAsState()
@@ -201,7 +222,16 @@ private fun MainShell(pendingRoute: MutableStateFlow<String?>) {
                         )
                     }
                     composable(Routes.SETTINGS) {
-                        SettingsScreen(onBack = { nav.popBackStack() }, contentPadding = padding)
+                        SettingsScreen(
+                            onBack = { nav.popBackStack() },
+                            onOpenAbout = { nav.navigate(Routes.ABOUT) { launchSingleTop = true } },
+                            onLockVerified = onUnlockedByUser,
+                            snackbar = snackbar,
+                            contentPadding = padding,
+                        )
+                    }
+                    composable(Routes.ABOUT) {
+                        AboutScreen(onBack = { nav.popBackStack() }, snackbar = snackbar, contentPadding = padding)
                     }
                 }
             }

@@ -51,7 +51,9 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -101,6 +103,7 @@ import com.f7developer.tapeback.ui.theme.BungeeFamily
 import com.f7developer.tapeback.ui.theme.Retro
 import com.f7developer.tapeback.ui.theme.SilkscreenStyle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun DeckScreen(
@@ -145,6 +148,14 @@ fun DeckScreen(
                     if (event.arg != null) context.getString(event.text, event.arg) else context.getString(event.text),
                 )
                 is DeckEvent.RecordingSaved -> sheetFor = event.recordingId to event.sealNow
+                is DeckEvent.RecordingSavedQuietly -> launch {
+                    val result = snackbar.showSnackbar(
+                        message = context.getString(R.string.msg_recording_saved, event.cassetteTitle, event.side),
+                        actionLabel = context.getString(R.string.action_details),
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) sheetFor = event.recordingId to false
+                }
             }
         }
     }
@@ -203,7 +214,12 @@ fun DeckScreen(
                             color = palette.panelText.copy(alpha = 0.75f),
                             modifier = Modifier.weight(1f),
                         )
-                        StatusLamp(stringResource(R.string.lamp_rec), palette.rec, on = recording, blink = state.mode == DeckMode.REC_PAUSED)
+                        StatusLamp(
+                            stringResource(R.string.lamp_rec),
+                            palette.rec,
+                            on = recording || state.mode == DeckMode.COUNTDOWN,
+                            blink = state.mode == DeckMode.REC_PAUSED || state.mode == DeckMode.COUNTDOWN,
+                        )
                         Spacer(Modifier.width(12.dp))
                         StatusLamp(stringResource(R.string.lamp_play), palette.play, on = state.mode == DeckMode.PLAYING, blink = state.mode == DeckMode.PAUSED)
                     }
@@ -233,6 +249,7 @@ fun DeckScreen(
                                 if (cassette == null) showTargets = true else vm.insert()
                             }, onChoose = { showTargets = true })
                         }
+                        if (state.countdown > 0) CountdownOverlay(state.countdown)
                     }
                     Spacer(Modifier.height(12.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -241,11 +258,19 @@ fun DeckScreen(
                             Text(stringResource(R.string.counter), style = SilkscreenStyle, color = palette.panelText.copy(alpha = 0.7f))
                         }
                         Spacer(Modifier.width(10.dp))
-                        val shownMs = if (recording || state.mode == DeckMode.SAVING) state.recorder.elapsedMs else positionMs
+                        val shownMs = when {
+                            state.mode == DeckMode.COUNTDOWN -> state.countdown * 1_000L
+                            recording || state.mode == DeckMode.SAVING -> state.recorder.elapsedMs
+                            else -> positionMs
+                        }
+                        val maxRec = state.recorder.maxDurationMs
                         LcdReadout(
                             text = TimeFormat.lcd(shownMs),
                             ghost = if (shownMs >= 3_600_000L) "8:88:88" else "88:88",
                             caption = when {
+                                state.mode == DeckMode.COUNTDOWN -> stringResource(R.string.lcd_countdown)
+                                recording && maxRec > 0 ->
+                                    stringResource(R.string.lcd_rec_left, TimeFormat.lcd((maxRec - state.recorder.elapsedMs).coerceAtLeast(0L)))
                                 recording -> stringResource(R.string.lcd_rec)
                                 state.isWinding -> stringResource(if (state.mode == DeckMode.WIND_FF) R.string.lcd_ff else R.string.lcd_rew)
                                 state.durationMs > 0 -> "/ " + TimeFormat.lcd(state.durationMs)
@@ -331,6 +356,14 @@ fun DeckScreen(
                             colors = AssistChipDefaults.assistChipColors(containerColor = palette.surfaceRaised),
                         )
                     }
+                    PlaybackOptions(
+                        repeat = state.settings.repeatMode,
+                        skipSilence = state.settings.skipSilence,
+                        sleep = state.sleepTimer,
+                        onCycleRepeat = vm::cycleRepeat,
+                        onSkipSilence = vm::setSkipSilence,
+                        onSleep = vm::setSleepTimer,
+                    )
                 }
             }
 
@@ -397,7 +430,7 @@ private fun transportKeys(state: DeckUiState, onKey: () -> Unit, vm: DeckViewMod
     return listOf(
         TransportKey(
             KeySymbol.REC, stringResource(R.string.key_rec), stringResource(R.string.cd_key_rec),
-            latched = m == DeckMode.RECORDING || m == DeckMode.REC_PAUSED || m == DeckMode.STARTING,
+            latched = m == DeckMode.RECORDING || m == DeckMode.REC_PAUSED || m == DeckMode.STARTING || m == DeckMode.COUNTDOWN,
             enabled = m != DeckMode.SAVING,
             onPress = press(vm::onRec),
         ),

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.f7developer.tapeback.R
 import com.f7developer.tapeback.audio.play.PlayerEvent
 import com.f7developer.tapeback.audio.play.PlayerSnapshot
+import com.f7developer.tapeback.audio.play.SleepTimer
 import com.f7developer.tapeback.audio.record.RecorderEvent
 import com.f7developer.tapeback.audio.record.RecorderState
 import com.f7developer.tapeback.audio.record.RecorderStatus
@@ -17,6 +18,7 @@ import com.f7developer.tapeback.domain.model.CassetteSummary
 import com.f7developer.tapeback.domain.model.PlaybackFx
 import com.f7developer.tapeback.domain.model.RecordTarget
 import com.f7developer.tapeback.domain.model.RecordingItem
+import com.f7developer.tapeback.domain.model.RepeatMode
 import com.f7developer.tapeback.domain.model.TapeSide
 import com.f7developer.tapeback.domain.policy.ReelPhysics
 import kotlinx.coroutines.Job
@@ -40,7 +42,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
-enum class DeckMode { STOPPED, PLAYING, PAUSED, STARTING, RECORDING, REC_PAUSED, SAVING, WIND_FF, WIND_REW }
+enum class DeckMode { STOPPED, PLAYING, PAUSED, COUNTDOWN, STARTING, RECORDING, REC_PAUSED, SAVING, WIND_FF, WIND_REW }
 
 data class DeckUiState(
     val mode: DeckMode = DeckMode.STOPPED,
@@ -56,6 +58,9 @@ data class DeckUiState(
     val cassettes: List<CassetteSummary> = emptyList(),
     val settings: AppSettings = AppSettings(),
     val capsuleMode: Boolean = false,
+    /** Seconds left on the pre-roll countdown, 0 when none is running. */
+    val countdown: Int = 0,
+    val sleepTimer: SleepTimer? = null,
 ) {
     val fx: PlaybackFx get() = settings.fx
     val isRecordingMode: Boolean get() = mode == DeckMode.RECORDING || mode == DeckMode.REC_PAUSED || mode == DeckMode.STARTING
@@ -77,12 +82,15 @@ sealed interface DeckEvent {
     data object RequestMicPermission : DeckEvent
     data class Message(@StringRes val text: Int, val arg: String? = null) : DeckEvent
     data class RecordingSaved(val recordingId: Long, val sealNow: Boolean) : DeckEvent
+    /** Saved without opening the details sheet (the user turned it off in Settings). */
+    data class RecordingSavedQuietly(val recordingId: Long, val cassetteTitle: String, val side: String) : DeckEvent
 }
 
 private data class LocalDeck(
     val inserted: Boolean = true,
     val pausedByKey: Boolean = false,
     val wind: Int = 0, // -1 rewind, 1 fast-forward
+    val countdown: Int = 0,
 )
 
 class DeckViewModel(private val container: AppContainer) : ViewModel() {
@@ -94,6 +102,7 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
 
     private val local = MutableStateFlow(LocalDeck())
     private var windJob: Job? = null
+    private var countdownJob: Job? = null
     @Volatile private var windPositionMs: Long = 0L
 
     private val _events = MutableSharedFlow<DeckEvent>(extraBufferCapacity = 8)
@@ -120,7 +129,7 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
         val loaded: RecordingItem?,
     )
 
-    val state: StateFlow<DeckUiState> = combine(base, local, container.capsuleModeRequest) { b, l, capsule ->
+    val state: StateFlow<DeckUiState> = combine(base, local, container.capsuleModeRequest, player.sleepTimer) { b, l, capsule, sleep ->
         val target = b.settings.recordTarget
             ?.takeIf { t -> b.cassettes.any { it.cassette.id == t.cassetteId } }
             ?: b.cassettes.firstOrNull()?.let { RecordTarget(it.cassette.id, TapeSide.A) }
@@ -141,6 +150,8 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
             cassettes = b.cassettes,
             settings = b.settings,
             capsuleMode = capsule,
+            countdown = l.countdown,
+            sleepTimer = sleep,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DeckUiState())
 
@@ -148,7 +159,7 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch {
             recorder.events.collect { event ->
                 when (event) {
-                    is RecorderEvent.Saved -> onSaved(event.recordingId)
+                    is RecorderEvent.Saved -> onSaved(event.recordingId, event.autoStopped)
                     RecorderEvent.TooShort -> message(R.string.msg_too_short)
                     is RecorderEvent.Failed -> message(
                         when (event.reason) {
@@ -166,6 +177,10 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
                 when (event) {
                     PlayerEvent.TapeDamaged -> message(R.string.msg_tape_damaged)
                     PlayerEvent.CapsuleLocked -> message(R.string.msg_capsule_locked)
+                    PlayerEvent.SleepTimerFired -> {
+                        local.update { it.copy(pausedByKey = false) }
+                        message(R.string.msg_sleep_fired)
+                    }
                 }
             }
         }
@@ -183,6 +198,7 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
         RecorderStatus.PAUSED -> DeckMode.REC_PAUSED
         RecorderStatus.SAVING -> DeckMode.SAVING
         RecorderStatus.IDLE -> when {
+            l.countdown > 0 -> DeckMode.COUNTDOWN
             l.wind > 0 -> DeckMode.WIND_FF
             l.wind < 0 -> DeckMode.WIND_REW
             snap.isPlaying || (snap.playWhenReady && snap.buffering) -> DeckMode.PLAYING
@@ -221,22 +237,60 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
             RecorderStatus.IDLE -> Unit
             else -> return
         }
+        if (local.value.countdown > 0) {
+            // REC again during the countdown skips straight to recording.
+            countdownJob?.cancel()
+            countdownJob = null
+            local.update { it.copy(countdown = 0) }
+            viewModelScope.launch { beginRecording() }
+            return
+        }
         if (!recorder.hasPermission()) {
             _events.tryEmit(DeckEvent.RequestMicPermission)
             return
         }
-        viewModelScope.launch {
+        val seconds = s.settings.countdownSeconds
+        if (seconds <= 0) {
+            viewModelScope.launch { beginRecording() }
+            return
+        }
+        countdownJob?.cancel()
+        countdownJob = viewModelScope.launch {
             stopWinding(seek = true)
             if (s.player.isPlaying || s.player.playWhenReady) player.pause()
-            local.update { it.copy(inserted = true, pausedByKey = false) }
-            val target = s.target ?: container.cassetteRepository.ensureDefault().let { RecordTarget(it.id, TapeSide.A) }
-            sounds.play(Sfx.LATCH)
-            delay(CLICK_GUARD_MS + 100)
-            recorder.start(target, s.settings.quality)
+            for (n in seconds downTo 1) {
+                local.update { it.copy(countdown = n, inserted = true, pausedByKey = false) }
+                sounds.play(Sfx.KEY)
+                delay(1_000)
+            }
+            local.update { it.copy(countdown = 0) }
+            countdownJob = null
+            beginRecording()
         }
     }
 
+    private suspend fun beginRecording() {
+        val s = state.value
+        stopWinding(seek = true)
+        if (s.player.isPlaying || s.player.playWhenReady) player.pause()
+        local.update { it.copy(inserted = true, pausedByKey = false) }
+        val target = s.target ?: container.cassetteRepository.ensureDefault().let { RecordTarget(it.id, TapeSide.A) }
+        sounds.play(Sfx.LATCH)
+        delay(CLICK_GUARD_MS + 100) // keep the latch click out of the recording
+        recorder.start(target, s.settings.quality, s.settings.autoStopMinutes * 60_000L)
+    }
+
+    /** Cancels a running pre-roll countdown. Returns true if one was running. */
+    private fun cancelCountdown(): Boolean {
+        if (local.value.countdown == 0 && countdownJob == null) return false
+        countdownJob?.cancel()
+        countdownJob = null
+        local.update { it.copy(countdown = 0) }
+        return true
+    }
+
     fun onPlay() {
+        cancelCountdown()
         val s = state.value
         if (s.recorder.isBusy) {
             message(R.string.msg_stop_recording_first)
@@ -287,6 +341,10 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onStop() {
+        if (cancelCountdown()) {
+            sounds.play(Sfx.STOP)
+            return
+        }
         val s = state.value
         when {
             s.recorder.isCapturing || s.recorder.status == RecorderStatus.STARTING -> {
@@ -316,6 +374,7 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onWind(forward: Boolean) {
+        cancelCountdown()
         val s = state.value
         if (s.recorder.isBusy) {
             message(R.string.msg_stop_recording_first)
@@ -429,6 +488,31 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
         container.capsuleModeRequest.value = false
     }
 
+    // ---- Repeat, skip silence, sleep timer --------------------------------------------------
+
+    fun cycleRepeat() {
+        val next = when (state.value.settings.repeatMode) {
+            RepeatMode.OFF -> RepeatMode.SIDE
+            RepeatMode.SIDE -> RepeatMode.ONE
+            RepeatMode.ONE -> RepeatMode.OFF
+        }
+        sounds.play(Sfx.KEY)
+        viewModelScope.launch { settingsRepo.setRepeatMode(next) }
+    }
+
+    fun setSkipSilence(on: Boolean) {
+        viewModelScope.launch { settingsRepo.setSkipSilence(on) }
+    }
+
+    /** minutes > 0 arms a timer, 0 cancels, [SLEEP_END_OF_TRACK] stops after the current recording. */
+    fun setSleepTimer(minutes: Int) {
+        when {
+            minutes == SLEEP_END_OF_TRACK -> player.setSleepAtEndOfTrack()
+            minutes > 0 -> player.setSleepTimer(minutes)
+            else -> player.cancelSleepTimer()
+        }
+    }
+
     // ---- Helpers --------------------------------------------------------------------------
 
     /** Loads the current target side. Returns false (with a message) if the side is blank. */
@@ -449,7 +533,8 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
         return true
     }
 
-    private suspend fun onSaved(recordingId: Long) {
+    private suspend fun onSaved(recordingId: Long, autoStopped: Boolean = false) {
+        if (autoStopped) message(R.string.msg_auto_stopped, state.value.settings.autoStopMinutes.toString())
         val item = container.recordingRepository.get(recordingId) ?: return
         val sideItems = container.recordingRepository.bySide(item.recording.cassetteId, item.recording.side)
         val index = sideItems.indexOfFirst { it.recording.id == recordingId }.coerceAtLeast(0)
@@ -457,7 +542,11 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
         container.capsuleModeRequest.value = false
         if (!sealNow) player.load(sideItems, index, playWhenReady = false)
         local.update { it.copy(pausedByKey = false) }
-        _events.emit(DeckEvent.RecordingSaved(recordingId, sealNow))
+        if (!sealNow && !state.value.settings.detailsAfterRecording) {
+            _events.emit(DeckEvent.RecordingSavedQuietly(recordingId, item.cassetteTitle, item.recording.side.letter))
+        } else {
+            _events.emit(DeckEvent.RecordingSaved(recordingId, sealNow))
+        }
     }
 
     private fun message(@StringRes res: Int, arg: String? = null) {
@@ -473,5 +562,7 @@ class DeckViewModel(private val container: AppContainer) : ViewModel() {
         /** One side of a C90: the reels fill over 45 minutes while recording. */
         const val SIDE_CAPACITY_MS = 45 * 60 * 1000L
         const val CLICK_GUARD_MS = 140L
+        const val SLEEP_END_OF_TRACK = -1
+        val SLEEP_CHOICES = listOf(15, 30, 45, 60, 90)
     }
 }

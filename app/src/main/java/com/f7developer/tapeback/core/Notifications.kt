@@ -12,7 +12,9 @@ import com.f7developer.tapeback.R
 object Notifications {
     const val CHANNEL_RECORDING = "recording"
     const val CHANNEL_CAPSULES = "capsules"
+    const val CHANNEL_REMINDERS = "reminders"
     const val RECORDING_ID = 1001
+    const val REMINDER_ID = 1002
     const val CAPSULE_ID_BASE = 20_000
 
     fun createChannels(context: Context) {
@@ -32,6 +34,11 @@ object Notifications {
                     context.getString(R.string.channel_capsules),
                     NotificationManager.IMPORTANCE_HIGH,
                 ).apply { description = context.getString(R.string.channel_capsules_desc) },
+                NotificationChannel(
+                    CHANNEL_REMINDERS,
+                    context.getString(R.string.channel_reminders),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply { description = context.getString(R.string.channel_reminders_desc) },
             ),
         )
     }
