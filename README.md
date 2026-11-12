@@ -27,6 +27,8 @@ people remember and none of the parts they don't:
 | Mechanical clicks and motor whirr | Synthesized in code (no audio assets), rendered once to WAV and played through `SoundPool`; never captured in a recording |
 | A shelf of mixtapes | Cassettes with Side A/B, hand-written labels, seven shell skins, categories and cover art |
 
+A longer write-up of the category fit is in [docs/RESURRECTION.md](docs/RESURRECTION.md).
+
 The modern half is what makes it trustworthy: AAC recording in a `microphone` foreground service
 that survives the screen turning off, background playback with a media notification, a searchable
 diary with streaks and "On this day", and time capsules unlocked by WorkManager notifications
@@ -95,7 +97,9 @@ The full requirements, design and task plan are in
 See [docs/KIRO.md](docs/KIRO.md) for the spec, steering files and hooks that drove development,
 and [docs/DEMO.md](docs/DEMO.md) for the demo script and how to seed demo content.
 
-## Licenses
+## License
+
+TapeBack is released under the MIT License. See [LICENSE](LICENSE).
 
 Bundled fonts: Bungee, Space Grotesk and VT323 (SIL Open Font License), Permanent Marker
 (Apache 2.0). License texts are in [docs/licenses](docs/licenses).
